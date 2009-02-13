@@ -19,34 +19,44 @@ from icalendar import Calendar, Event
 import collections
 import re
 
-events_by_summary = collections.defaultdict(list)
+def soft_id(event):
+    """
+    Returns a value that is basically a hash of the more interesting
+    bits of an event.  In particular, it ignores the UID, but it
+    includes the summary, description, and some of the dates.  The
+    idea is that if two events have the same soft_id, then I won't
+    care if all but one of them vanishes.
+    """
+    return "-".join([str(event.get(field)) for field in ['DTSTART', 'DTEND', 'RRULE', 'DESCRIPTION', 'LOCATION', 'SUMMARY']])
+
+events_by_soft_id = collections.defaultdict(list)
 
 with open("gcal.ics") as fh:
     cal = Calendar.from_string(fh.read())
     for component in cal.walk():
         if component.name == 'VEVENT':
-            events_by_summary[component.get('SUMMARY')].append(component)
-
-print len(events_by_summary.keys()), "summaries"
+            events_by_soft_id[soft_id(component)].append(component)
+            
+print len(events_by_soft_id.keys()), "events, after 'soft' merging"
 total_events = 0
-for events in events_by_summary.values():
+for events in events_by_soft_id.values():
     total_events += len(events)
 print total_events, "events"
 print
 
 non_dups = 0
 # Delete entries that aren't duplicates.
-for summary in events_by_summary.keys():
-    events = events_by_summary[summary]
+for soft_id in events_by_soft_id.keys():
+    events = events_by_soft_id[soft_id]
     if len(events) == 1:
-        del events_by_summary[summary]
+        del events_by_soft_id[soft_id]
         non_dups += 1
 print "Oh goody;", non_dups, "events are clean"
 print
 
 uids_by_description = collections.defaultdict(list)
 
-for summary, events in events_by_summary.iteritems():
+for soft_id, events in events_by_soft_id.iteritems():
     for e in events:
         uid = e.get('UID')
         for recognizer, description in [
@@ -74,7 +84,7 @@ for descr, uids in uids_by_description.iteritems():
 print
 
 print "A sample duplicated event:"
-summary, events = events_by_summary.popitem()
-print summary
+soft_id, events = events_by_soft_id.popitem()
+print "soft_id:", soft_id
 for e in events:
-    print e.get('UID')
+    print "uid:", e.get('UID')
