@@ -44,15 +44,15 @@ for events in events_by_soft_id.values():
 print total_events, "events"
 print
 
-non_dups = 0
-# Delete entries that aren't duplicates.
-for soft_id in events_by_soft_id.keys():
-    events = events_by_soft_id[soft_id]
-    if len(events) == 1:
-        del events_by_soft_id[soft_id]
-        non_dups += 1
-print "Oh goody;", non_dups, "events are clean"
+# Keys are the number of UIDs on an event; values are the number of
+# events I found that had that many UIDs.
+duplications_histogram = collections.defaultdict(lambda: 0)
+for events in events_by_soft_id.values():
+    duplications_histogram[len(events)] += 1
+for num_uuids, num_events in duplications_histogram.iteritems():
+    print "%5d events had %2d UIDs." % (num_events, num_uuids)
 print
+
 
 uids_by_description = collections.defaultdict(list)
 
@@ -75,6 +75,7 @@ for soft_id, events in events_by_soft_id.iteritems():
                 uids_by_description[description].append(uid)
                 break
 
+print "Summary of kinds of UIDs:"
 for descr, uids in uids_by_description.iteritems():
     print descr, ":",
     if descr == 'unknown':
