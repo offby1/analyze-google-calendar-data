@@ -30,26 +30,29 @@ for events in events_by_summary.values():
     total_events += len(events)
 print total_events, "events"
 
-google_uids = 0
-long_uids = 0
-curly_brace_uids = 0
+uids_by_description = collections.defaultdict(list)
+
 freaks_printed = 0
 for summary, events in events_by_summary.iteritems():
     for e in events:
         uid = e.get('UID')
-        if re.match(".*@(google|gmail).com", uid):
-            google_uids += 1
-        elif len(uid) > 100:
-            long_uids += 1
-        elif re.match('{........-....-....-....-............}', uid):
-            curly_brace_uids += 1
-        else:
-            if freaks_printed == 0:
-                print "Here's an event with neither a Google-flavor nor a really long UID:"
-                print e
-                freaks_printed += 1
+        for recognizer, description in [
+            (lambda uid: re.match(".*@(google|gmail).com", uid), 'google_uids'),
+            (lambda uid: len(uid) > 100, 'long_uids'),
+            (lambda uid: re.match('{........-....-....-....-............}', uid), 'curly_brace_uids'),
+            (lambda uid: re.match('........-....-....-....-............', uid), 'bare_uids'),
+            (lambda uid: True , 'unknown')
+            ]:
+            if recognizer(uid):
+                uids_by_description[description].append(uid)
+                break
 
-print google_uids, "google uids;", long_uids, "long uids"
+for descr, uids in uids_by_description.iteritems():
+    print descr, ":",
+    if descr == 'unknown':
+        print uids
+    else:
+        print len(uids)
 
 print "A sample duplicated event:"
 summary, events = events_by_summary.popitem()
