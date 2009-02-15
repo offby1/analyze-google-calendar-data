@@ -13,35 +13,24 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 
 (define *auth-url* (string->url "https://www.google.com:443/accounts/ClientLogin"))
 
-;; Dig out a username and password from a file that happens to contain
-;; that info.
-(define (get-local-auth-info)
-  (call-with-input-file (build-path (find-system-path 'home-dir) ".imap-authinfo")
-    (lambda (ip)
-      (let ((line (read-line ip)))
-        (match line
-          [(regexp #rx"login (.*?) password \"(.*)\"" (list _ username password))
-           (values username password)])))))
+(provide get-token)
+(define (get-token email password)
 
-(provide get-tokens)
-(define (get-tokens)
+  (let ((form (string->bytes/utf-8
+               (alist->form-urlencoded
+                `((accountType . "GOOGLE")
+                  (Email . ,email)
+                  (Passwd . ,password)
+                  (service . "cl")
+                  (source . "eric.hanchrow-gcaldeduplicator-version0"))))))
 
-  (let ((form (let-values (((email password)
-                            (get-local-auth-info)))
-                (string->bytes/utf-8
-                 (alist->form-urlencoded
-                  `((accountType . "GOOGLE")
-                    (Email . ,email)
-                    (Passwd . ,password)
-                    (service . "cl")
-                    (source . "eric.hanchrow-gcaldeduplicator-version0")))))))
-
-    (make-immutable-hash
-     (for/list ([line (in-lines (
-                                 ssl:post-pure-port *auth-url*
-                                 form
-                                 (list "Content-type: application/x-www-form-urlencoded")))])
-       (match line
-         [(regexp "^([A-Za-z]+)=(.*)$" (list _ key value))
-          (cons (string->symbol key) value)
-          ])))))
+    (call/ec
+     (lambda (return)
+       (for ([line (in-lines (
+                              ssl:post-pure-port *auth-url*
+                              form
+                              (list "Content-type: application/x-www-form-urlencoded")))])
+         (match line
+           [(regexp "^Auth=(.*)$" (list _ token))
+            (return token)]
+           [_ 'unknown]))))))
