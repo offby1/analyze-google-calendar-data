@@ -16,7 +16,7 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 ;; Dig out a username and password from a file that happens to contain
 ;; that info.
 (define (get-local-auth-info)
-  (call-with-input-file "/home/erich/.imap-authinfo"
+  (call-with-input-file (build-path (find-system-path 'home-dir) ".imap-authinfo")
     (lambda (ip)
       (let ((line (read-line ip)))
         (match line
