@@ -34,12 +34,14 @@ def auth(email, password):
     return calendar_service
 
 def snag_local_auth_info():
-    with open(os.path.join(os.getenv("HOME"), ".imap-authinfo")) as fh:
+    data = {}
+    with open(os.path.join(os.getenv("HOME"), ".gmail-test-account-auth-info")) as fh:
         for line in fh:
-            m = re.match(".*login (.*?) password \"(.*)\".*", line)
+            m = re.match("(.*?): (.*)", line)
             if m:
-                return list(m.groups())
-    return None
+                data[m.group(1)] = m.group(2)
+    print data
+    return data
 
 def PrintOwnCalendars(calendar_service):
   feed = calendar_service.GetOwnCalendarsFeed()
@@ -48,7 +50,8 @@ def PrintOwnCalendars(calendar_service):
     print '\t%s. %s' % (i, a_calendar.title.text,)
 
 if __name__ == "__main__":
-    cs = auth(*snag_local_auth_info())
+    auth_data = snag_local_auth_info()
+    cs = auth(auth_data['username'], auth_data['password'])
     print "I guess it worked:", cs
     PrintOwnCalendars(cs)
 
