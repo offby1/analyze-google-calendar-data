@@ -72,7 +72,8 @@ def describe_uid(u):
             return description
             break
 
-    return 'unknown'
+    print "Unrecognized UID:", uid
+    return 'unrecognized'
 
 uids_by_description = collections.defaultdict(list)
 
@@ -84,10 +85,7 @@ for soft_id, events in events_by_soft_id.iteritems():
 print "Summary of kinds of UIDs:"
 for descr, uids in uids_by_description.iteritems():
     print descr, ":",
-    if descr == 'unknown':
-        print uids
-    else:
-        print len(uids)
+    print len(uids)
 print
 
 print "A sample duplicated event:"
