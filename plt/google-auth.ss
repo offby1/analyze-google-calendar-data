@@ -26,11 +26,20 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 
     (call/ec
      (lambda (return)
-       (for ([line (in-lines (
-                              ssl:post-pure-port *auth-url*
-                              form
-                              (list "Content-type: application/x-www-form-urlencoded")))])
-         (match line
-           [(regexp "^Auth=(.*)$" (list _ token))
-            (return token)]
-           [_ 'unknown]))))))
+       (let* ((inp (
+                    ssl:post-impure-port *auth-url*
+                    form
+                    (list "Content-type: application/x-www-form-urlencoded")))
+              (headers (purify-port inp))
+              (response (read-line (open-input-string headers))))
+
+         (match response
+           [(regexp #rx"HTTP/.* 200 OK\r" (list _))
+
+            (for ([line (in-lines inp)])
+              (match line
+                [(regexp "^Auth=(.*)$" (list _ token))
+                 (return token)]
+                [_ 'just-ignore-it]))]
+           [_ (error 'get-token "bad response: ~s" headers)]
+           ))))))
