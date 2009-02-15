@@ -6,12 +6,38 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 
 #lang scheme
 
+;; A kludge from Eli Barzilay to get the net/url library to work with
+;; HTTPS
 (include "eli.ss")
+(require net/uri-codec)
 
-(define *auth-url* (string->url "https://www.google.com/accounts/ClientLogin"))
+(define *auth-url* (string->url "https://www.google.com/accounts/ClientLogin:443"))
+
+;; Dig out a username and password from a file that happens to contain
+;; that info.
+(define (get-local-auth-info)
+  (call-with-input-file "/home/erich/.imap-authinfo"
+    (lambda (ip)
+      (let ((line (read-line ip)))
+        (match line
+          [(regexp #rx"login (.*?) password \"(.*)\"" (list _ username password))
+           (values username password)])))))
 
 (provide main)
 (define (main . args)
-  (for ([line (in-lines (ssl:get-pure-port (string->url "https://google.com:443")))])
-    (display line)
-    (newline)))
+
+  (let ((form (let-values (((email password)
+                            (get-local-auth-info)))
+                (string->bytes/utf-8
+                 (alist->form-urlencoded
+                  `((accountType . "GOOGLE")
+                    (Email . ,email)
+                    (Passwd . ,password)
+                    (service . "cl")
+                    (source . "eric.hanchrow-gcaldeduplicator-version0")
+                    ))))))
+    (printf "Sending ~s to ~s~%" form *auth-url*)
+    (for ([line (in-lines (ssl:post-pure-port *auth-url* form))])
+      (display line)
+      (newline)))
+  )
