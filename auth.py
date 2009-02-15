@@ -31,6 +31,8 @@ def auth(email, password):
     calendar_service.source = "eric.hanchrow-gcaldeduplicator-version0"
     calendar_service.ProgrammaticLogin()
 
+    return calendar_service
+
 def snag_local_auth_info():
     with open(os.path.join(os.getenv("HOME"), ".imap-authinfo")) as fh:
         for line in fh:
@@ -39,5 +41,14 @@ def snag_local_auth_info():
                 return list(m.groups())
     return None
 
+def PrintOwnCalendars(calendar_service):
+  feed = calendar_service.GetOwnCalendarsFeed()
+  print feed.title.text
+  for i, a_calendar in enumerate(feed.entry):
+    print '\t%s. %s' % (i, a_calendar.title.text,)
+
 if __name__ == "__main__":
-    auth(*snag_local_auth_info())
+    cs = auth(*snag_local_auth_info())
+    print "I guess it worked:", cs
+    PrintOwnCalendars(cs)
+
