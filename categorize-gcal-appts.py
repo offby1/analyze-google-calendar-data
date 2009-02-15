@@ -17,6 +17,7 @@ __version__ = "$Id$"
 
 from icalendar import Calendar, Event
 import collections
+import icalendar
 import re
 
 def soft_id(event):
@@ -54,10 +55,22 @@ for num_uuids, num_events in duplications_histogram.iteritems():
 print
 
 
-def describe_uid(u):
+def describe_uid(thing, verbose=False):
     """
     Return a short string -- one of just a few possibilities -- that describes the uid.
     """
+    e = None
+
+    if isinstance(thing, Event):
+        e = thing
+        thing = str(thing.get('UID'))
+    elif isinstance(thing, icalendar.prop.vText):
+        thing = str(thing)
+    
+    if not isinstance(thing, str):
+        print "OK, I give up: what the hell is %s (type: %s; dir: %s)?" % (thing, type(thing), dir(thing))
+        exit(1)
+    
     for recognizer, description in [
         (lambda uid: re.match(".*@(google|gmail).com", uid),
          'google_uids'),
@@ -68,11 +81,13 @@ def describe_uid(u):
         (lambda uid: re.match('........-....-....-....-............', uid),
          'bare_uids'),
         ]:
-        if recognizer(u):
+        if recognizer(thing):
             return description
             break
 
-    print "Unrecognized UID:", uid
+    if verbose:
+        print "event %s has funny-lookin' UID %s" % (e, thing)
+
     return 'unrecognized'
 
 uids_by_description = collections.defaultdict(list)
@@ -88,8 +103,26 @@ for descr, uids in uids_by_description.iteritems():
     print len(uids)
 print
 
-print "A sample duplicated event:"
-soft_id, events = events_by_soft_id.popitem()
-print "soft_id:", soft_id
-for e in events:
-    print "uid:", e.get('UID')
+
+# Test a theory: for every bunch of duplicated events, two qualities
+# hold:
+
+# * There is at most one google-flavor UID; and
+# * if there is one, it's got the oldest "created" time.
+for soft_id, events in events_by_soft_id.iteritems():
+    with_google_uids = filter(lambda e: 'google_uids' == describe_uid(e), events)
+    if len(with_google_uids) > 1:
+        print "Crap, the event with soft_id %s has %d google UIDs" % (soft_id, len(with_google_uids))
+        exit(1)
+
+    if len(with_google_uids) == 1:
+        events.sort(cmp, lambda e: str(e.get('CREATED')))
+        oldest = events[0]
+        if with_google_uids[0].get('UID') <> oldest.get('UID'):
+            for e in events:
+                print e.get('CREATED'),
+            print
+            print "Crap, the oldest event %s doesn't have the same UID as %s" % (oldest, with_google_uids[0])
+            exit(1)
+
+print "Aha!  Zee theory iss korrect!"
