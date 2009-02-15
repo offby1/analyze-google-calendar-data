@@ -23,8 +23,8 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
           [(regexp #rx"login (.*?) password \"(.*)\"" (list _ username password))
            (values username password)])))))
 
-(provide main)
-(define (main . args)
+(provide get-tokens)
+(define (get-tokens)
 
   (let ((form (let-values (((email password)
                             (get-local-auth-info)))
@@ -36,9 +36,12 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
                     (service . "cl")
                     (source . "eric.hanchrow-gcaldeduplicator-version0")))))))
 
-    (for ([line (in-lines (
-                           ssl:post-pure-port *auth-url*
-                           form
-                           (list "Content-type: application/x-www-form-urlencoded")))])
-      (display line)
-      (newline))))
+    (make-immutable-hash
+     (for/list ([line (in-lines (
+                                 ssl:post-pure-port *auth-url*
+                                 form
+                                 (list "Content-type: application/x-www-form-urlencoded")))])
+       (match line
+         [(regexp "^([A-Za-z]+)=(.*)$" (list _ key value))
+          (cons (string->symbol key) value)
+          ])))))
