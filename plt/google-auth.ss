@@ -11,6 +11,7 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 (include "eli.ss")
 (require net/uri-codec)
 
+;; http://code.google.com/apis/accounts/docs/AuthForInstalledApps.html
 (define *auth-url* (string->url "https://www.google.com:443/accounts/ClientLogin"))
 
 (provide get-token)
