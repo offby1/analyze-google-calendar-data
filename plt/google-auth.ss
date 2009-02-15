@@ -11,7 +11,7 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
 (include "eli.ss")
 (require net/uri-codec)
 
-(define *auth-url* (string->url "https://www.google.com/accounts/ClientLogin:443"))
+(define *auth-url* (string->url "https://www.google.com:443/accounts/ClientLogin"))
 
 ;; Dig out a username and password from a file that happens to contain
 ;; that info.
@@ -34,10 +34,11 @@ exec  mzscheme --require "$0" --main -- ${1+"$@"}
                     (Email . ,email)
                     (Passwd . ,password)
                     (service . "cl")
-                    (source . "eric.hanchrow-gcaldeduplicator-version0")
-                    ))))))
-    (printf "Sending ~s to ~s~%" form *auth-url*)
-    (for ([line (in-lines (ssl:post-pure-port *auth-url* form))])
+                    (source . "eric.hanchrow-gcaldeduplicator-version0")))))))
+
+    (for ([line (in-lines (
+                           ssl:post-pure-port *auth-url*
+                           form
+                           (list "Content-type: application/x-www-form-urlencoded")))])
       (display line)
-      (newline)))
-  )
+      (newline))))
