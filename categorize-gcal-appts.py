@@ -129,6 +129,10 @@ print "Aha!  Zee theory iss korrect!"
 
 # Some day I will translate the "print" statement to a Google API call
 # that actually does the deletions.
+
+# See http://code.google.com/apis/calendar/ and
+# http://code.google.com/p/gdata-python-client/
+# http://code.google.com/apis/calendar/docs/1.0/developers_guide_python.html
 with open('uids-of-duplicates', 'w') as fh:
     for soft_id, events in events_by_soft_id.iteritems():
         events.sort(cmp, lambda e: str(e.get('CREATED')))
