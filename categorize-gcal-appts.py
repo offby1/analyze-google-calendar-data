@@ -37,11 +37,11 @@ with open("gcal.ics") as fh:
         if component.name == 'VEVENT':
             events_by_soft_id[soft_id(component)].append(component)
             
-print len(events_by_soft_id.keys()), "events, after 'soft' merging"
 total_events = 0
 for events in events_by_soft_id.values():
     total_events += len(events)
-print total_events, "events"
+print total_events, "total events"
+print len(events_by_soft_id.keys()), "events, after 'soft' merging"
 print
 
 # Keys are the number of UIDs on an event; values are the number of
@@ -54,26 +54,32 @@ for num_uuids, num_events in duplications_histogram.iteritems():
 print
 
 
+def describe_uid(u):
+    """
+    Return a short string -- one of just a few possibilities -- that describes the uid.
+    """
+    for recognizer, description in [
+        (lambda uid: re.match(".*@(google|gmail).com", uid),
+         'google_uids'),
+        (lambda uid: len(uid) > 100,
+         'long_uids'),
+        (lambda uid: re.match('{........-....-....-....-............}', uid),
+         'curly_brace_uids'),
+        (lambda uid: re.match('........-....-....-....-............', uid),
+         'bare_uids'),
+        ]:
+        if recognizer(u):
+            return description
+            break
+
+    return 'unknown'
+
 uids_by_description = collections.defaultdict(list)
 
 for soft_id, events in events_by_soft_id.iteritems():
     for e in events:
         uid = e.get('UID')
-        for recognizer, description in [
-            (lambda uid: re.match(".*@(google|gmail).com", uid),
-             'google_uids'),
-            (lambda uid: len(uid) > 100,
-             'long_uids'),
-            (lambda uid: re.match('{........-....-....-....-............}', uid),
-             'curly_brace_uids'),
-            (lambda uid: re.match('........-....-....-....-............', uid),
-             'bare_uids'),
-            (lambda uid: True,
-             'unknown'),
-            ]:
-            if recognizer(uid):
-                uids_by_description[description].append(uid)
-                break
+        uids_by_description[describe_uid(uid)].append(uid)
 
 print "Summary of kinds of UIDs:"
 for descr, uids in uids_by_description.iteritems():
