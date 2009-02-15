@@ -126,3 +126,13 @@ for soft_id, events in events_by_soft_id.iteritems():
             exit(1)
 
 print "Aha!  Zee theory iss korrect!"
+
+# Some day I will translate the "print" statement to a Google API call
+# that actually does the deletions.
+with open('uids-of-duplicates', 'w') as fh:
+    for soft_id, events in events_by_soft_id.iteritems():
+        events.sort(cmp, lambda e: str(e.get('CREATED')))
+        if len(events) > 1:
+            for dup in events[1:]:
+                print >> fh, dup.get('UID')
+print "Wrote", fh.name
