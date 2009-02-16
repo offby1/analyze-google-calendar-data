@@ -18,8 +18,6 @@ import gdata.calendar
 import gdata.calendar.service
 import gdata.service
 import getopt
-import os
-import re
 import string
 import sys
 import time
@@ -32,26 +30,3 @@ def auth(email, password):
     calendar_service.ProgrammaticLogin()
 
     return calendar_service
-
-def _snag_local_auth_info():
-    data = {}
-    with open(os.path.join(os.getenv("HOME"), ".gmail-test-account-auth-info")) as fh:
-        for line in fh:
-            m = re.match("(.*?): (.*)", line)
-            if m:
-                data[m.group(1)] = m.group(2)
-    print data
-    return data
-
-def _PrintOwnCalendars(calendar_service):
-  feed = calendar_service.GetOwnCalendarsFeed()
-  print feed.title.text
-  for i, a_calendar in enumerate(feed.entry):
-    print '\t%s. %s' % (i, a_calendar.title.text,)
-
-if __name__ == "__main__":
-    auth_data = _snag_local_auth_info()
-    cs = auth(auth_data['username'], auth_data['password'])
-    print "I guess it worked:", cs
-    _PrintOwnCalendars(cs)
-
