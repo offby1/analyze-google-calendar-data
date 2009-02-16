@@ -6,8 +6,8 @@ from __future__ import with_statement
 __author__ = ""
 __version__ = "$Id$"
 
-def PrintAllEventsOnDefaultCalendar(calendar_service):
-    feed = calendar_service.GetCalendarEventFeed()
+def PrintAllEventsOnDefaultCalendar(calendar_service, *args, **kwargs):
+    feed = calendar_service.GetCalendarEventFeed(*args, **kwargs)
     print 'Events on Primary Calendar: %s' % (feed.title.text,)
     for i, an_event in enumerate(feed.entry):
         print '\t%s. %s' % (i, an_event.title.text,)
@@ -22,5 +22,7 @@ def PrintAllEventsOnDefaultCalendar(calendar_service):
 
         break
 
-    print "Next:", feed.GetNextLink().href
+    kwargs['uri'] = feed.GetNextLink().href
+    print "Next:"
+    PrintAllEventsOnDefaultCalendar(calendar_service, *args, **kwargs)
     
