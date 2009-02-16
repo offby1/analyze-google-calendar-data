@@ -32,3 +32,5 @@ if __name__ == "__main__":
     cs = auth.auth(auth_data['username'], auth_data['password'])
     print "I guess it worked:", cs
     _PrintOwnCalendars(cs)
+    snag_events.PrintAllEventsOnDefaultCalendar(cs)
+    

@@ -14,4 +14,5 @@ def PrintAllEventsOnDefaultCalendar(calendar_service):
     for p, a_participant in enumerate(an_event.who):
         print '\t\t%s. %s' % (p, a_participant.email,)
         print '\t\t\t%s' % (a_participant.name,)
-        print '\t\t\t%s' % (a_participant.attendee_status.value,)
+        if getattr(a_participant, 'attendee_status', None):
+            print '\t\t\t%s' % (a_participant.attendee_status.value,)
