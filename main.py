@@ -31,6 +31,6 @@ if __name__ == "__main__":
     auth_data = _snag_local_auth_info()
     cs = auth.auth(auth_data['username'], auth_data['password'])
     print "I guess it worked:", cs
-    _PrintOwnCalendars(cs)
-    snag_events.PrintAllEventsOnDefaultCalendar(cs)
+    print len(list(snag_events.EventIterator(cs))), "events"
+
     
